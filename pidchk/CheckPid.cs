@@ -82,19 +82,23 @@ namespace pidchk
             }
             else if (RetID == -2147024809)
             {
-                result = " [ERR] PidGenX :: Invalid Arguments.";
+                result = $" [ERR] {RetID} PidGenX :: Invalid Arguments.";
             }
             else if (RetID == -1979645695)
             {
-                result = " [ERR] PidGenX :: Not a Windows Product Key.";
+                result = $" [ERR] {RetID} PidGenX :: Specified key does not work with pkeyconfig file.";
             }
             else if (RetID == -2147024894)
             {
-                result = " [ERR] PidGenX :: pkeyconfig.xrm.ms file not found.";
+                result = $" [ERR] {RetID} in PidGenX :: pkeyconfig.xrm.ms file not found.";
+            }
+            else if (RetID == -2147024893)
+            {
+                result = $" [ERR] {RetID} in PidGenX :: Invalid Function Call.";
             }
             else
             {
-                result = " [ERR] PidGenX :: Unkown Error.";
+                result = $" [ERR] {RetID} in PidGenX :: Unkown Error.";
             }
             Marshal.FreeHGlobal(PID);
             Marshal.FreeHGlobal(DPID);
