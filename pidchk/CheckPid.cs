@@ -21,9 +21,11 @@
 */
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Xml;
 
 namespace pidchk
 {
@@ -66,6 +68,7 @@ namespace pidchk
                 string edid = GetString(pid4, 0x0378);
                 string lit = GetString(pid4, 0x03F8);
                 string pchan = GetString(pid4, 0x0478);
+                string pdes = GetProductDescription(PKeyPath, "{" + act + "}", edi);
                 Console.WriteLine(" Product Key:         = {0}",productKey);
                 Console.WriteLine(" Key Status:          = Valid");
                 Console.WriteLine(" Extended PID:        = " + id);
@@ -74,9 +77,9 @@ namespace pidchk
                 Console.WriteLine(" Edition ID:          = " + edid);
                 Console.WriteLine(" License Type:        = " + lit);
                 Console.WriteLine(" License Channel:     = " + pchan);
+                Console.WriteLine(" Product Description: = " + pdes);
 
-                result = "S_OK";
-                
+                result = "S_OK";         
             }
             else if (RetID == -2147024809)
             {
@@ -98,10 +101,10 @@ namespace pidchk
             {
                 result = $" [ERR] {RetID} in PidGenX :: Unkown Error.";
             }
+
             Marshal.FreeHGlobal(PID);
             Marshal.FreeHGlobal(DPID);
             Marshal.FreeHGlobal(DPID4);
-            //FreeLibrary(dllHandle);
             return result;
         }
 
@@ -110,6 +113,25 @@ namespace pidchk
             int n = index;
             while (!(bytes[n] == 0 && bytes[n + 1] == 0)) n++;
             return Encoding.ASCII.GetString(bytes, index, n - index).Replace("\0", "");
+        }
+
+        private static string GetProductDescription(string PKeyPath, string act, string edi)
+        {
+            XmlDocument xmlDocument = new XmlDocument();
+            xmlDocument.Load(PKeyPath);
+            Stream inStream = (Stream)new MemoryStream(Convert.FromBase64String(xmlDocument.GetElementsByTagName("tm:infoBin")[0].InnerText));
+            xmlDocument.Load(inStream);
+            XmlNamespaceManager nsmgr = new XmlNamespaceManager(xmlDocument.NameTable);
+            nsmgr.AddNamespace("pkc", "http://www.microsoft.com/DRM/PKEY/Configuration/2.0");
+            XmlNode xmlNode = xmlDocument.SelectSingleNode("/pkc:ProductKeyConfiguration/pkc:Configurations/pkc:Configuration[pkc:ActConfigId='" + act + "']", nsmgr) ?? xmlDocument.SelectSingleNode("/pkc:ProductKeyConfiguration/pkc:Configurations/pkc:Configuration[pkc:ActConfigId='" + act.ToUpper() + "']", nsmgr);
+            try
+            {
+                return xmlNode.ChildNodes.Item(3).InnerText;
+            }
+            catch
+            {
+                return $"Failed to parse Product Description from {PKeyPath}";
+            }
         }
     }
 
@@ -152,6 +174,7 @@ namespace pidchk
                 string edid = GetString(pid4, 0x0378);
                 string lit = GetString(pid4, 0x03F8);
                 string pchan = GetString(pid4, 0x0478);
+                string pdes = GetProductDescription(PKeyPath, "{" + act + "}", edi);
                 Console.WriteLine(" Product Key:         = {0}", productKey);
                 Console.WriteLine(" Key Status:          = Valid");
                 Console.WriteLine(" Extended PID:        = " + id);
@@ -160,9 +183,9 @@ namespace pidchk
                 Console.WriteLine(" Edition ID:          = " + edid);
                 Console.WriteLine(" License Type:        = " + lit);
                 Console.WriteLine(" License Channel:     = " + pchan);
+                Console.WriteLine(" Product Description: = " + pdes);
 
                 result = "S_OK";
-
             }
             else if (RetID == -2147024809)
             {
@@ -187,7 +210,6 @@ namespace pidchk
             Marshal.FreeHGlobal(PID);
             Marshal.FreeHGlobal(DPID);
             Marshal.FreeHGlobal(DPID4);
-            //FreeLibrary(dllHandle);
             return result;
         }
 
@@ -196,6 +218,25 @@ namespace pidchk
             int n = index;
             while (!(bytes[n] == 0 && bytes[n + 1] == 0)) n++;
             return Encoding.ASCII.GetString(bytes, index, n - index).Replace("\0", "");
+        }
+
+        private static string GetProductDescription(string PKeyPath, string act, string edi)
+        {
+            XmlDocument xmlDocument = new XmlDocument();
+            xmlDocument.Load(PKeyPath);
+            Stream inStream = (Stream)new MemoryStream(Convert.FromBase64String(xmlDocument.GetElementsByTagName("tm:infoBin")[0].InnerText));
+            xmlDocument.Load(inStream);
+            XmlNamespaceManager nsmgr = new XmlNamespaceManager(xmlDocument.NameTable);
+            nsmgr.AddNamespace("pkc", "http://www.microsoft.com/DRM/PKEY/Configuration/2.0");
+            XmlNode xmlNode = xmlDocument.SelectSingleNode("/pkc:ProductKeyConfiguration/pkc:Configurations/pkc:Configuration[pkc:ActConfigId='" + act + "']", nsmgr) ?? xmlDocument.SelectSingleNode("/pkc:ProductKeyConfiguration/pkc:Configurations/pkc:Configuration[pkc:ActConfigId='" + act.ToUpper() + "']", nsmgr);
+            try
+            {
+                return xmlNode.ChildNodes.Item(3).InnerText;
+            }
+            catch
+            {
+                return $"Failed to parse Product Description from {PKeyPath}";
+            }
         }
     }
 }
