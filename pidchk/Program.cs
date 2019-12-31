@@ -21,6 +21,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -49,12 +50,81 @@ namespace pidchk
             }
 
             string productKey = args[0];
-            PidChecker pidCheck;
-            pidCheck = new PidChecker();
-            string result = pidCheck.CheckProductKey(productKey);
-            if (result != "S_OK")
+            string pwd = Directory.GetCurrentDirectory();
+            DirectoryInfo objDirectoryInfo = new DirectoryInfo(pwd);
+            FileInfo[] pkconfigFiles = objDirectoryInfo.GetFiles("*.xrm-ms", SearchOption.TopDirectoryOnly);
+            if (pkconfigFiles.Length != 0)
             {
-                Console.Error.WriteLine(result);
+                Console.WriteLine(" [INFO] Overiding default pkeyconfig.xrm-ms. Found {0} pkconfig files.\n", pkconfigFiles.Length);
+                bool success = false;
+                string lasterr = "";
+
+                try
+                {
+                    PidChecker pidCheck;
+                    pidCheck = new PidChecker();
+
+                    foreach (var file in pkconfigFiles)
+                    {
+                        string PKeyPath = Environment.CurrentDirectory + $@"\\{file.Name}";
+                        string result = pidCheck.CheckProductKey(productKey, PKeyPath);
+                        if (result == "S_OK")
+                        {
+                            success = true;
+                            break;
+                        }
+                        lasterr = result;
+                    }
+                    if (!success)
+                    {
+                        Console.Error.WriteLine(lasterr);
+                    }
+                }
+                catch (System.DllNotFoundException)
+                {
+                    PidChecker2 pidCheck;
+                    pidCheck = new PidChecker2();
+
+                    foreach (var file in pkconfigFiles)
+                    {
+                        string PKeyPath = Environment.CurrentDirectory + $@"\\{file.Name}";
+                        string result = pidCheck.CheckProductKey(productKey, PKeyPath);
+                        if (result == "S_OK")
+                        {
+                            success = true;
+                            break;
+                        }
+                        lasterr = result;
+                    }
+                    if (!success)
+                    {
+                        Console.Error.WriteLine(lasterr);
+                    }
+                }
+            }
+            else
+            {
+                string PKeyPath = Environment.SystemDirectory + @"\spp\tokens\pkeyconfig\pkeyconfig.xrm-ms";
+                try
+                {
+                    PidChecker pidCheck;
+                    pidCheck = new PidChecker();
+                    string result = pidCheck.CheckProductKey(productKey, PKeyPath);
+                    if (result != "S_OK")
+                    {
+                        Console.Error.WriteLine(result);
+                    }
+                }
+                catch (System.DllNotFoundException)
+                {
+                    PidChecker2 pidCheck;
+                    pidCheck = new PidChecker2();
+                    string result = pidCheck.CheckProductKey(productKey, PKeyPath);
+                    if (result != "S_OK")
+                    {
+                        Console.Error.WriteLine(result);
+                    }
+                }
             }
             return;
         }
