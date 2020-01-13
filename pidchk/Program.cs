@@ -26,6 +26,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 
 namespace pidchk
@@ -34,10 +36,20 @@ namespace pidchk
     {
         static void Main(string[] args)
         {
-            if (args.Length != 1 || args[0] == null)
+            switch (args.Length)
             {
-                Console.WriteLine(" Usage: pidchk.exe XXXXX-XXXXX-XXXXX-XXXXX-XXXXX");
-                return;
+                case 1:
+                    break;
+                case 2:
+                    if (args[1] != "-j")
+                    {
+                        Console.WriteLine(" Usage: pidchk.exe XXXXX-XXXXX-XXXXX-XXXXX-XXXXX [-j]");
+                        return;
+                    }
+                    break;
+                default:
+                    Console.WriteLine(" Usage: pidchk.exe XXXXX-XXXXX-XXXXX-XXXXX-XXXXX [-j]");
+                    return;
             }
 
             Regex rgx = new Regex(@"^([A-Za-z0-9]{5}-){4}[A-Za-z0-9]{5}$");
@@ -45,7 +57,7 @@ namespace pidchk
             {
                 int err = 0x57;
                 Console.Error.WriteLine(" [ERR] The Parameter {0} is Incorrect.",args[0]);
-                Console.WriteLine("     Usage: pidchk.exe XXXXX-XXXXX-XXXXX-XXXXX-XXXXX");
+                Console.WriteLine(" Usage: pidchk.exe XXXXX-XXXXX-XXXXX-XXXXX-XXXXX [-j]");
                 Environment.Exit(err);
             }
 
@@ -55,75 +67,28 @@ namespace pidchk
             FileInfo[] pkconfigFiles = objDirectoryInfo.GetFiles("*.xrm-ms", SearchOption.TopDirectoryOnly);
             if (pkconfigFiles.Length != 0)
             {
-                Console.WriteLine(" [INFO] Overiding default pkeyconfig.xrm-ms. Found {0} pkconfig files.\n", pkconfigFiles.Length);
                 bool success = false;
                 string lasterr = "";
+                PidChecker pidCheck;
+                pidCheck = new PidChecker();
 
-                try
+                foreach (var file in pkconfigFiles)
                 {
-                    PidChecker pidCheck;
-                    pidCheck = new PidChecker();
-
-                    foreach (var file in pkconfigFiles)
-                    {
-                        string PKeyPath = Environment.CurrentDirectory + $@"\\{file.Name}";
-                        string result = pidCheck.CheckProductKey(productKey, PKeyPath);
-                        if (result == "S_OK")
-                        {
-                            success = true;
-                            break;
-                        }
-                        lasterr = result;
-                    }
-                    if (!success)
-                    {
-                        Console.Error.WriteLine(lasterr);
-                    }
-                }
-                catch (System.DllNotFoundException)
-                {
-                    PidChecker2 pidCheck;
-                    pidCheck = new PidChecker2();
-
-                    foreach (var file in pkconfigFiles)
-                    {
-                        string PKeyPath = Environment.CurrentDirectory + $@"\\{file.Name}";
-                        string result = pidCheck.CheckProductKey(productKey, PKeyPath);
-                        if (result == "S_OK")
-                        {
-                            success = true;
-                            break;
-                        }
-                        lasterr = result;
-                    }
-                    if (!success)
-                    {
-                        Console.Error.WriteLine(lasterr);
-                    }
-                }
-            }
-            else
-            {
-                string PKeyPath = Environment.SystemDirectory + @"\spp\tokens\pkeyconfig\pkeyconfig.xrm-ms";
-                try
-                {
-                    PidChecker pidCheck;
-                    pidCheck = new PidChecker();
+                    string PKeyPath = Environment.CurrentDirectory + $@"\\{file.Name}";
                     string result = pidCheck.CheckProductKey(productKey, PKeyPath);
-                    if (result != "S_OK")
+                    LicenseInfo obj = JsonConvert.DeserializeObject<LicenseInfo>(result);
+                    if (obj.Status == "success")
                     {
-                        Console.Error.WriteLine(result);
+                        success = true;
+                        Console.WriteLine(result);
+                        break;
                     }
+                    lasterr = result;
                 }
-                catch (System.DllNotFoundException)
+
+                if (!success)
                 {
-                    PidChecker2 pidCheck;
-                    pidCheck = new PidChecker2();
-                    string result = pidCheck.CheckProductKey(productKey, PKeyPath);
-                    if (result != "S_OK")
-                    {
-                        Console.Error.WriteLine(result);
-                    }
+                    Console.WriteLine(lasterr);
                 }
             }
             return;
