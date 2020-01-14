@@ -50,16 +50,18 @@ namespace pidchk
                 return "{\"status\":\"" + $"{Status}\", \"errormessage\": \"" + $"{ErrorMessage}\"" + "}";
             }
             return "{\"status\":\"" + $"{Status}\"," +
-                   "\"pkeyfile\":\"" + $"{PkeyFile}\"," +
-                   "\"productkey\":\"" + $"{ProductKey}\"," +
-                   "\"keystatus\":\"" + $"{KeyStatus}\"," +
-                   "\"extendedpid\":\"" + $"{ExtendedPID}\"," +
-                   "\"activationid\":\"" + $"{ActivationID}\"," +
-                   "\"editiontype\":\"" + $"{EditionType}\"," +
-                   "\"editionid\":\"" + $"{EditionID}\"," +
-                   "\"licensetype\":\"" + $"{LicenseType}\"," +
-                   "\"licensechannel\":\"" + $"{LicenseChannel}\"," +
-                   "\"productdesc\":\"" + $"{ProductDesc}\"" + "}";
+                   "\"result\": {" +
+                       "\"pkeyfile\":\"" + $"{PkeyFile}\"," +
+                       "\"productkey\":\"" + $"{ProductKey}\"," +
+                       "\"keystatus\":\"" + $"{KeyStatus}\"," +
+                       "\"extendedpid\":\"" + $"{ExtendedPID}\"," +
+                       "\"activationid\":\"" + $"{ActivationID}\"," +
+                       "\"editiontype\":\"" + $"{EditionType}\"," +
+                       "\"editionid\":\"" + $"{EditionID}\"," +
+                       "\"licensetype\":\"" + $"{LicenseType}\"," +
+                       "\"licensechannel\":\"" + $"{LicenseChannel}\"," +
+                       "\"productdesc\":\"" + $"{ProductDesc}\"" + "}" +
+                   "}";
         }
     }
 }
