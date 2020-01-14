@@ -40,56 +40,61 @@ namespace pidchk
             {
                 case 1:
                     break;
-                case 2:
-                    if (args[1] != "-j")
-                    {
-                        Console.WriteLine(" Usage: pidchk.exe XXXXX-XXXXX-XXXXX-XXXXX-XXXXX [-j]");
-                        return;
-                    }
-                    break;
                 default:
-                    Console.WriteLine(" Usage: pidchk.exe XXXXX-XXXXX-XXXXX-XXXXX-XXXXX [-j]");
+                    Console.WriteLine("{\"status\":\"" + "error\", \"errormessage\": \"" + "Invalid number args, usage pidchk.exe XXXXX-XXXXX-XXXXX-XXXXX-XXXXX\"" + "}");
                     return;
             }
 
             Regex rgx = new Regex(@"^([A-Za-z0-9]{5}-){4}[A-Za-z0-9]{5}$");
             if (!rgx.IsMatch(args[0]))
             {
-                int err = 0x57;
-                Console.Error.WriteLine(" [ERR] The Parameter {0} is Incorrect.",args[0]);
-                Console.WriteLine(" Usage: pidchk.exe XXXXX-XXXXX-XXXXX-XXXXX-XXXXX [-j]");
-                Environment.Exit(err);
+                Console.WriteLine("{\"status\":\"" + "error\", \"errormessage\": \"" + "Productkey not in valid format XXXXX-XXXXX-XXXXX-XXXXX-XXXXX\"" + "}");
+                return;
             }
 
             string productKey = args[0];
-            string pwd = Directory.GetCurrentDirectory();
+            //string pwd = Directory.GetCurrentDirectory();
+            string pwd = Environment.CurrentDirectory;
             DirectoryInfo objDirectoryInfo = new DirectoryInfo(pwd);
-            FileInfo[] pkconfigFiles = objDirectoryInfo.GetFiles("*.xrm-ms", SearchOption.TopDirectoryOnly);
+            FileInfo[] pkconfigFiles = objDirectoryInfo.GetFiles("*.xrm-ms", SearchOption.AllDirectories);
             if (pkconfigFiles.Length != 0)
             {
                 bool success = false;
                 string lasterr = "";
-                PidChecker pidCheck;
-                pidCheck = new PidChecker();
 
-                foreach (var file in pkconfigFiles)
+                try
                 {
-                    string PKeyPath = Environment.CurrentDirectory + $@"\\{file.Name}";
-                    string result = pidCheck.CheckProductKey(productKey, PKeyPath);
-                    LicenseInfo obj = JsonConvert.DeserializeObject<LicenseInfo>(result);
-                    if (obj.Status == "success")
+                    PidChecker pidCheck;
+                    pidCheck = new PidChecker();
+
+                    foreach (var file in pkconfigFiles)
                     {
-                        success = true;
-                        Console.WriteLine(result);
-                        break;
+                        string PKeyPath = file.FullName;
+                        string result = pidCheck.CheckProductKey(productKey, PKeyPath);
+                        LicenseInfo obj = JsonConvert.DeserializeObject<LicenseInfo>(result);
+                        if (obj.Status == "success")
+                        {
+                            success = true;
+                            Console.WriteLine(result);
+                            break;
+                        }
+                        lasterr = result;
                     }
-                    lasterr = result;
-                }
 
-                if (!success)
-                {
-                    Console.WriteLine(lasterr);
+                    if (!success)
+                    {
+                        Console.WriteLine(lasterr);
+                    }
                 }
+                catch (System.DllNotFoundException)
+                {
+                    Console.WriteLine("{\"status\":\"" + "error\", \"errormessage\": \"" + "ProductKeyUtilities.dll from adk-vamt not found or missing\"" + "}");
+                    throw;
+                }
+            }
+            else
+            {
+                Console.WriteLine("{\"status\":\"" + "error\", \"errormessage\": \"" + "pkeyconfig files from adk-vamt not found or missing.\"" + "}");
             }
             return;
         }
