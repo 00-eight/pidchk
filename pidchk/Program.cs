@@ -54,7 +54,7 @@ namespace pidchk
 
             string productKey = args[0];
             //string pwd = Directory.GetCurrentDirectory();
-            string pwd = Environment.CurrentDirectory;
+            string pwd = Environment.GetEnvironmentVariable("PIDCHK_HOME");
             DirectoryInfo objDirectoryInfo = new DirectoryInfo(pwd);
             FileInfo[] pkconfigFiles = objDirectoryInfo.GetFiles("*.xrm-ms", SearchOption.AllDirectories);
             if (pkconfigFiles.Length != 0)
